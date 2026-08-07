@@ -65,8 +65,9 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const apiKey = process.env.GEMINI_API_KEY;
+    const apiKey = process.env.GEMINI_API_KEY?.trim();
     if (!apiKey) {
+      console.error("GEMINI_API_KEY is not defined in environment variables");
       return NextResponse.json(
         { error: "서버 설정 오류: API 키가 구성되지 않았습니다." },
         { status: 500 }
