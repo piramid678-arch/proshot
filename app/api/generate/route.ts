@@ -176,7 +176,7 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(
-      { error: clientErrorMessage },
+      { error: clientErrorMessage, debug: rawErrorMsg },
       { status: 500 }
     );
   }
