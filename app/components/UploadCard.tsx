@@ -483,9 +483,21 @@ export default function UploadCard() {
   return (
     <div className="w-full max-w-4xl mx-auto bg-white/90 backdrop-blur-md rounded-3xl border border-slate-100/80 p-6 sm:p-8 md:p-10 shadow-xl shadow-slate-200/50">
       {error && (
-        <div className="mb-6 p-4 rounded-xl bg-rose-50 border border-rose-100 text-rose-600 text-xs sm:text-sm font-medium flex items-center gap-2">
-          <span>⚠️</span>
-          <span>{error}</span>
+        <div className="mb-6 p-4 sm:p-5 rounded-2xl bg-amber-50/90 border border-amber-200/90 text-amber-900 text-xs sm:text-sm font-medium flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-sm">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">✨</span>
+            <div>
+              <p className="font-bold text-amber-950">AI 엔진을 준비 중입니다</p>
+              <p className="text-xs text-amber-800/90 mt-0.5">{error}</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-xs transition-all shrink-0 active:scale-95 self-end sm:self-center"
+          >
+            다시 시도하기 ↺
+          </button>
         </div>
       )}
 
