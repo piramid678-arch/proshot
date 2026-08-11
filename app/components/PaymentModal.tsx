@@ -110,13 +110,18 @@ export default function PaymentModal() {
       else if (paymentMethod === "paypal") initialPg = "paypal";
 
       const requestPaymentWithPg = (pg: string) => {
+        const isPaypalPg = pg === "paypal";
+        const currency = isPaypalPg ? "USD" : "KRW";
+        const amount = isPaypalPg ? selectedPass.usdPriceValue : selectedPass.priceValue;
+
         IMP.request_pay(
           {
             pg,
             pay_method: "card",
             merchant_uid: orderId,
             name: `ProShot ${selectedPass.credits}회 이용권`,
-            amount: numericValue,
+            amount: amount,
+            currency: currency,
             buyer_email: "customer@proshot.kr",
             buyer_name: "ProShot 고객",
             buyer_tel: "010-0000-0000",
@@ -133,7 +138,7 @@ export default function PaymentModal() {
                 closePaymentModal();
               }, 1500);
             } else {
-              // If NaverPay or PayPal PG is not linked in PortOne, fallback smoothly to html5_inicis (통합 결제창)
+              // If NaverPay or PayPal PG is not linked in PortOne, fallback smoothly to html5_inicis (국내 통합 결제창 4,900원)
               if (
                 pg !== "html5_inicis" &&
                 rsp.error_msg &&
@@ -142,7 +147,7 @@ export default function PaymentModal() {
                   rsp.error_msg.includes("API call") ||
                   rsp.error_msg.includes("등록"))
               ) {
-                console.warn(`PG ${pg} unavailable. Falling back to html5_inicis integrated PG window...`);
+                console.warn(`PG ${pg} unavailable. Falling back to html5_inicis integrated PG window (KRW)...`);
                 requestPaymentWithPg("html5_inicis");
                 return;
               }
