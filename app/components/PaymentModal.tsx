@@ -100,7 +100,8 @@ export default function PaymentModal() {
     const IMP = win?.IMP;
 
     if (IMP && typeof IMP.request_pay === "function") {
-      const storeId = process.env.NEXT_PUBLIC_PORTONE_STORE_ID || "imp00000000";
+      // Official PortOne Sandbox Merchant ID (imp19424728 for KakaoPay / INICIS PG window)
+      const storeId = process.env.NEXT_PUBLIC_PORTONE_STORE_ID || "imp19424728";
       IMP.init(storeId);
 
       let pgProvider = "kakaopay.TC0ONETIME";
@@ -116,12 +117,13 @@ export default function PaymentModal() {
           name: `ProShot ${selectedPass.credits}회 이용권`,
           amount: numericValue,
           buyer_email: "customer@proshot.kr",
-          buyer_name: "ProShot Customer",
+          buyer_name: "ProShot 고객",
           buyer_tel: "010-0000-0000",
         },
         (rsp: ImpRsp) => {
           setIsProcessing(false);
           if (rsp.success) {
+            // Authorized by PG Payment Window
             addCredits(selectedPass.credits);
             triggerGaPurchase();
             setShowSuccessToast(true);
@@ -130,17 +132,8 @@ export default function PaymentModal() {
               closePaymentModal();
             }, 1500);
           } else {
-            // If PG settings are unconfigured or error occurs, fall back to smooth payment completion
-            if (rsp.error_msg && (rsp.error_msg.includes("PG 설정") || rsp.error_msg.includes("찾을 수 없습니다"))) {
-              console.warn("PortOne PG configuration missing. Falling back to test approval:", rsp.error_msg);
-              addCredits(selectedPass.credits);
-              triggerGaPurchase();
-              setShowSuccessToast(true);
-              setTimeout(() => {
-                setShowSuccessToast(false);
-                closePaymentModal();
-              }, 1500);
-            } else if (rsp.error_msg && !rsp.error_msg.includes("취소")) {
+            // Cancelled or failed in PG window
+            if (rsp.error_msg && !rsp.error_msg.includes("취소")) {
               alert(`결제 처리 안내: ${rsp.error_msg}`);
             }
           }
