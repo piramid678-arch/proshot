@@ -104,41 +104,59 @@ export default function PaymentModal() {
       const storeId = process.env.NEXT_PUBLIC_PORTONE_STORE_ID || "imp19424728";
       IMP.init(storeId);
 
-      let pgProvider = "kakaopay.TC0ONETIME";
-      if (paymentMethod === "card") pgProvider = "html5_inicis";
-      else if (paymentMethod === "naverpay") pgProvider = "naverpay";
-      else if (paymentMethod === "paypal") pgProvider = "paypal";
+      let initialPg = "kakaopay.TC0ONETIME";
+      if (paymentMethod === "card") initialPg = "html5_inicis";
+      else if (paymentMethod === "naverpay") initialPg = "naverpay";
+      else if (paymentMethod === "paypal") initialPg = "paypal";
 
-      IMP.request_pay(
-        {
-          pg: pgProvider,
-          pay_method: "card",
-          merchant_uid: orderId,
-          name: `ProShot ${selectedPass.credits}회 이용권`,
-          amount: numericValue,
-          buyer_email: "customer@proshot.kr",
-          buyer_name: "ProShot 고객",
-          buyer_tel: "010-0000-0000",
-        },
-        (rsp: ImpRsp) => {
-          setIsProcessing(false);
-          if (rsp.success) {
-            // Authorized by PG Payment Window
-            addCredits(selectedPass.credits);
-            triggerGaPurchase();
-            setShowSuccessToast(true);
-            setTimeout(() => {
-              setShowSuccessToast(false);
-              closePaymentModal();
-            }, 1500);
-          } else {
-            // Cancelled or failed in PG window
-            if (rsp.error_msg && !rsp.error_msg.includes("취소")) {
-              alert(`결제 처리 안내: ${rsp.error_msg}`);
+      const requestPaymentWithPg = (pg: string) => {
+        IMP.request_pay(
+          {
+            pg,
+            pay_method: "card",
+            merchant_uid: orderId,
+            name: `ProShot ${selectedPass.credits}회 이용권`,
+            amount: numericValue,
+            buyer_email: "customer@proshot.kr",
+            buyer_name: "ProShot 고객",
+            buyer_tel: "010-0000-0000",
+          },
+          (rsp: ImpRsp) => {
+            if (rsp.success) {
+              // Authorized by PG Payment Window
+              setIsProcessing(false);
+              addCredits(selectedPass.credits);
+              triggerGaPurchase();
+              setShowSuccessToast(true);
+              setTimeout(() => {
+                setShowSuccessToast(false);
+                closePaymentModal();
+              }, 1500);
+            } else {
+              // If NaverPay or PayPal PG is not linked in PortOne, fallback smoothly to html5_inicis (통합 결제창)
+              if (
+                pg !== "html5_inicis" &&
+                rsp.error_msg &&
+                (rsp.error_msg.includes("유효하지 않은 가맹점") ||
+                  rsp.error_msg.includes("permissions") ||
+                  rsp.error_msg.includes("API call") ||
+                  rsp.error_msg.includes("등록"))
+              ) {
+                console.warn(`PG ${pg} unavailable. Falling back to html5_inicis integrated PG window...`);
+                requestPaymentWithPg("html5_inicis");
+                return;
+              }
+
+              setIsProcessing(false);
+              if (rsp.error_msg && !rsp.error_msg.includes("취소")) {
+                alert(`결제 처리 안내: ${rsp.error_msg}`);
+              }
             }
           }
-        }
-      );
+        );
+      };
+
+      requestPaymentWithPg(initialPg);
     } else {
       // Fallback approval simulator when SDK is not present
       await new Promise((res) => setTimeout(res, 1000));
