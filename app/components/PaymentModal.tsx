@@ -81,7 +81,7 @@ export default function PaymentModal() {
         items: [
           {
             item_id: selectedPass.id,
-            item_name: `PulseCraft Credit (${selectedPass.credits}회)`,
+            item_name: `ProShot Credit (${selectedPass.credits}회)`,
             price: numericValue,
             quantity: 1,
           },

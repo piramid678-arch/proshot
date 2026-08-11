@@ -16,7 +16,7 @@ export const LANGUAGES: LanguageOption[] = [
 export const TRANSLATIONS: Record<Language, Record<string, string>> = {
   ko: {
     // Nav
-    brandName: "PulseCraft AI",
+    brandName: "ProShot AI",
     navHowItWorks: "이용 방법",
     navShowcase: "스타일 갤러리",
     navStart: "시작하기",
@@ -123,7 +123,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
   en: {
     // Nav
-    brandName: "PulseCraft AI",
+    brandName: "ProShot AI",
     navHowItWorks: "How It Works",
     navShowcase: "Style Gallery",
     navStart: "Get Started",
@@ -230,7 +230,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
   ja: {
     // Nav
-    brandName: "PulseCraft AI",
+    brandName: "ProShot AI",
     navHowItWorks: "使い方",
     navShowcase: "スタイルギャラリー",
     navStart: "はじめに",
@@ -337,7 +337,7 @@ export const TRANSLATIONS: Record<Language, Record<string, string>> = {
 
   zh: {
     // Nav
-    brandName: "PulseCraft AI",
+    brandName: "ProShot AI",
     navHowItWorks: "使用方法",
     navShowcase: "风格画廊",
     navStart: "开始",
