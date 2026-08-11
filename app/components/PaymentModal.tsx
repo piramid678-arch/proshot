@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLanguage } from "../context/LanguageContext";
 
 interface PassOption {
@@ -54,39 +54,123 @@ export default function PaymentModal() {
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
   const [showSuccessToast, setShowSuccessToast] = useState<boolean>(false);
 
-  if (!isPaymentModalOpen) return null;
-
   const selectedPass = PASS_OPTIONS.find((p) => p.id === selectedPassId) ?? PASS_OPTIONS[1];
 
-  const handlePayment = async () => {
-    setIsProcessing(true);
+  // Dynamically load PayPal SDK when PayPal option is selected
+  useEffect(() => {
+    if (isPaymentModalOpen && paymentMethod === "paypal") {
+      const scriptId = "paypal-sdk-script";
+      if (!document.getElementById(scriptId)) {
+        const script = document.createElement("script");
+        script.id = scriptId;
+        script.src = `https://www.paypal.com/sdk/js?client-id=${process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || "sb"}&currency=USD`;
+        script.async = true;
+        script.onload = () => {
+          renderPaypalButtons();
+        };
+        document.body.appendChild(script);
+      } else {
+        renderPaypalButtons();
+      }
+    }
+  }, [paymentMethod, selectedPassId, isPaymentModalOpen]);
 
-    const orderId = `ORD_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+  const triggerGaPurchase = (orderId: string) => {
     const numericValue = paymentMethod === "paypal" ? selectedPass.usdPriceValue : selectedPass.priceValue;
     const currency = paymentMethod === "paypal" ? "USD" : "KRW";
 
-    // Track GA4 Purchase event helper
-    const triggerGaPurchase = () => {
-      type GtagFunction = (command: string, action: string, params?: Record<string, unknown>) => void;
-      const win = typeof window !== "undefined" ? (window as unknown as { gtag?: GtagFunction }) : undefined;
-      if (typeof win?.gtag === "function") {
-        win.gtag("event", "purchase", {
-          transaction_id: orderId,
-          value: numericValue,
-          currency: currency,
-          items: [
-            {
-              item_id: selectedPass.id,
-              item_name: `ProShot Credit (${selectedPass.credits}회)`,
-              price: numericValue,
-              quantity: 1,
-            },
-          ],
-        });
-      }
+    type GtagFunction = (command: string, action: string, params?: Record<string, unknown>) => void;
+    const win = typeof window !== "undefined" ? (window as unknown as { gtag?: GtagFunction }) : undefined;
+    if (typeof win?.gtag === "function") {
+      win.gtag("event", "purchase", {
+        transaction_id: orderId,
+        value: numericValue,
+        currency: currency,
+        items: [
+          {
+            item_id: selectedPass.id,
+            item_name: `ProShot Credit (${selectedPass.credits}회)`,
+            price: numericValue,
+            quantity: 1,
+          },
+        ],
+      });
+    }
+  };
+
+  const renderPaypalButtons = () => {
+    type PaypalButtonsObj = {
+      render: (selector: string) => void;
+    };
+    type PaypalObj = {
+      Buttons: (config: Record<string, unknown>) => PaypalButtonsObj;
+    };
+    type WindowWithPaypal = Window & typeof globalThis & {
+      paypal?: PaypalObj;
     };
 
-    // Check if PortOne (I'mport) SDK is loaded on window
+    const win = typeof window !== "undefined" ? (window as WindowWithPaypal) : undefined;
+    const container = document.getElementById("paypal-button-container");
+    if (!container || !win?.paypal) return;
+
+    container.innerHTML = "";
+
+    try {
+      win.paypal
+        .Buttons({
+          style: {
+            layout: "vertical",
+            color: "gold",
+            shape: "rect",
+            label: "paypal",
+          },
+          createOrder: (_data: unknown, actions: { order: { create: (param: unknown) => Promise<string> } }) => {
+            return actions.order.create({
+              purchase_units: [
+                {
+                  description: `ProShot ${selectedPass.credits} Credits Pass`,
+                  amount: {
+                    currency_code: "USD",
+                    value: selectedPass.usdPriceValue.toString(),
+                  },
+                },
+              ],
+            });
+          },
+          onApprove: async (_data: unknown, actions: { order: { capture: () => Promise<unknown> } }) => {
+            await actions.order.capture();
+            const orderId = `PAYPAL_${Date.now()}`;
+            addCredits(selectedPass.credits);
+            triggerGaPurchase(orderId);
+            setShowSuccessToast(true);
+            setTimeout(() => {
+              setShowSuccessToast(false);
+              closePaymentModal();
+            }, 1500);
+          },
+          onError: (err: unknown) => {
+            console.error("PayPal Checkout Error:", err);
+          },
+        })
+        .render("#paypal-button-container");
+    } catch (e) {
+      console.error("PayPal Render Error:", e);
+    }
+  };
+
+  if (!isPaymentModalOpen) return null;
+
+  const handlePayment = async () => {
+    if (paymentMethod === "paypal") {
+      // If Paypal buttons container is present, render or highlight PayPal checkout
+      renderPaypalButtons();
+      return;
+    }
+
+    setIsProcessing(true);
+    const orderId = `ORD_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+
+    // Check PortOne (I'mport) SDK
     type ImpRsp = { success: boolean; error_msg?: string; merchant_uid?: string };
     type ImpRequest = (params: Record<string, unknown>, callback: (rsp: ImpRsp) => void) => void;
     type WindowWithImp = Window & typeof globalThis & {
@@ -100,73 +184,48 @@ export default function PaymentModal() {
     const IMP = win?.IMP;
 
     if (IMP && typeof IMP.request_pay === "function") {
-      // Official PortOne Sandbox Merchant ID (imp19424728 for KakaoPay / INICIS PG window)
       const storeId = process.env.NEXT_PUBLIC_PORTONE_STORE_ID || "imp19424728";
       IMP.init(storeId);
 
-      let initialPg = "kakaopay.TC0ONETIME";
-      if (paymentMethod === "card") initialPg = "html5_inicis";
-      else if (paymentMethod === "naverpay") initialPg = "naverpay";
-      else if (paymentMethod === "paypal") initialPg = "paypal";
+      let pgProvider = "kakaopay.TC0ONETIME";
+      if (paymentMethod === "card" || paymentMethod === "naverpay") {
+        pgProvider = "html5_inicis";
+      }
 
-      const requestPaymentWithPg = (pg: string) => {
-        const isPaypalPg = pg === "paypal";
-        const currency = isPaypalPg ? "USD" : "KRW";
-        const amount = isPaypalPg ? selectedPass.usdPriceValue : selectedPass.priceValue;
-
-        IMP.request_pay(
-          {
-            pg,
-            pay_method: "card",
-            merchant_uid: orderId,
-            name: `ProShot ${selectedPass.credits}회 이용권`,
-            amount: amount,
-            currency: currency,
-            buyer_email: "customer@proshot.kr",
-            buyer_name: "ProShot 고객",
-            buyer_tel: "010-0000-0000",
-          },
-          (rsp: ImpRsp) => {
-            if (rsp.success) {
-              // Authorized by PG Payment Window
-              setIsProcessing(false);
-              addCredits(selectedPass.credits);
-              triggerGaPurchase();
-              setShowSuccessToast(true);
-              setTimeout(() => {
-                setShowSuccessToast(false);
-                closePaymentModal();
-              }, 1500);
-            } else {
-              // If NaverPay or PayPal PG is not linked in PortOne, fallback smoothly to html5_inicis (국내 통합 결제창 4,900원)
-              if (
-                pg !== "html5_inicis" &&
-                rsp.error_msg &&
-                (rsp.error_msg.includes("유효하지 않은 가맹점") ||
-                  rsp.error_msg.includes("permissions") ||
-                  rsp.error_msg.includes("API call") ||
-                  rsp.error_msg.includes("등록"))
-              ) {
-                console.warn(`PG ${pg} unavailable. Falling back to html5_inicis integrated PG window (KRW)...`);
-                requestPaymentWithPg("html5_inicis");
-                return;
-              }
-
-              setIsProcessing(false);
-              if (rsp.error_msg && !rsp.error_msg.includes("취소")) {
-                alert(`결제 처리 안내: ${rsp.error_msg}`);
-              }
+      IMP.request_pay(
+        {
+          pg: pgProvider,
+          pay_method: "card",
+          merchant_uid: orderId,
+          name: `ProShot ${selectedPass.credits}회 이용권`,
+          amount: selectedPass.priceValue,
+          currency: "KRW",
+          buyer_email: "customer@proshot.kr",
+          buyer_name: "ProShot 고객",
+          buyer_tel: "010-0000-0000",
+        },
+        (rsp: ImpRsp) => {
+          setIsProcessing(false);
+          if (rsp.success) {
+            addCredits(selectedPass.credits);
+            triggerGaPurchase(orderId);
+            setShowSuccessToast(true);
+            setTimeout(() => {
+              setShowSuccessToast(false);
+              closePaymentModal();
+            }, 1500);
+          } else {
+            if (rsp.error_msg && !rsp.error_msg.includes("취소")) {
+              alert(`결제 처리 안내: ${rsp.error_msg}`);
             }
           }
-        );
-      };
-
-      requestPaymentWithPg(initialPg);
+        }
+      );
     } else {
-      // Fallback approval simulator when SDK is not present
+      // Simulator fallback if SDK is blocked
       await new Promise((res) => setTimeout(res, 1000));
       addCredits(selectedPass.credits);
-      triggerGaPurchase();
+      triggerGaPurchase(orderId);
       setIsProcessing(false);
 
       setShowSuccessToast(true);
@@ -216,7 +275,7 @@ export default function PaymentModal() {
           </p>
         </div>
 
-        {/* Pricing Pass Cards (Enlarged) */}
+        {/* Pricing Pass Cards */}
         <div className="space-y-3.5 mb-8">
           {PASS_OPTIONS.map((pass) => {
             const isSelected = selectedPassId === pass.id;
@@ -260,7 +319,7 @@ export default function PaymentModal() {
           })}
         </div>
 
-        {/* Payment Method Selection (Active Selection Highlighted) */}
+        {/* Payment Method Selection */}
         <div className="mb-8">
           <label className="block text-xs sm:text-sm font-bold text-slate-800 mb-3 flex items-center justify-between">
             <span>{t("paymentMethodLabel")}</span>
@@ -343,22 +402,31 @@ export default function PaymentModal() {
           <span>안전한 1회성 단건 결제 · 자동 정기 구독 결제 없음</span>
         </div>
 
-        {/* Submit Pay Button */}
-        <button
-          type="button"
-          onClick={handlePayment}
-          disabled={isProcessing}
-          className="w-full py-4.5 sm:py-5 px-8 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-base sm:text-lg transition-all duration-200 shadow-xl shadow-indigo-600/25 active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
-        >
-          {isProcessing ? (
-            <span className="flex items-center gap-2">
-              <span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
-              {getPaymentMethodName()} 결제 승인창 연결 중...
-            </span>
-          ) : (
-            <span>{t(selectedPass.priceKey)} {getPaymentMethodName()}로 결제하기</span>
-          )}
-        </button>
+        {/* Payment Buttons or PayPal Native Buttons */}
+        {paymentMethod === "paypal" ? (
+          <div className="space-y-3">
+            <div className="p-4 rounded-2xl bg-blue-50/80 border border-blue-100 text-blue-900 text-xs font-semibold text-center">
+              <span>🌐 PayPal Checkout (${selectedPass.usdPriceValue} USD)</span>
+            </div>
+            <div id="paypal-button-container" className="w-full min-h-[50px] flex justify-center" />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={handlePayment}
+            disabled={isProcessing}
+            className="w-full py-4.5 sm:py-5 px-8 rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold text-base sm:text-lg transition-all duration-200 shadow-xl shadow-indigo-600/25 active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2"
+          >
+            {isProcessing ? (
+              <span className="flex items-center gap-2">
+                <span className="w-5 h-5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                {getPaymentMethodName()} 결제 승인창 연결 중...
+              </span>
+            ) : (
+              <span>{t(selectedPass.priceKey)} {getPaymentMethodName()}로 결제하기</span>
+            )}
+          </button>
+        )}
 
         {/* Success Toast */}
         {showSuccessToast && (
