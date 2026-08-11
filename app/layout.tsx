@@ -16,13 +16,12 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "ProShot AI — 셀카 한 장으로 만드는 증명사진 & AI 프로필 스튜디오",
+  title: "ProShot — 셀카 한 장으로 증명사진부터 컨셉 화보까지",
   description:
-    "취업용 증명사진, 여권사진, 비즈니스 헤드샷, K-POP 프로필, 화보까지 스튜디오 예약 없이 5분 만에 완벽 생성. 4K 인화 시트 자동 제공.",
+    "스튜디오 예약 없이 5분 만에. 취업용 증명사진, 여권사진, 비즈니스 헤드샷, 아이돌 프로필, 커스텀 컨셉 화보까지 셀카 한 장으로 완성하고 인화용 시트로 바로 출력하세요.",
 };
 
 import { LanguageProvider } from "./context/LanguageContext";
-import PaymentModal from "./components/PaymentModal";
 
 export default function RootLayout({
   children,
@@ -48,10 +47,7 @@ export default function RootLayout({
       <body
         className={`${notoSansKr.variable} ${outfit.variable} font-sans antialiased`}
       >
-        <LanguageProvider>
-          {children}
-          <PaymentModal />
-        </LanguageProvider>
+        <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
   );

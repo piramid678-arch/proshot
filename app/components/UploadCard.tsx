@@ -37,7 +37,7 @@ export default function UploadCard() {
 
   const [selfieBase64, setSelfieBase64] = useState<string | null>(null);
   const [fileName, setFileName] = useState<string | null>(null);
-  const [category, setCategory] = useState<CategoryId>("creator");
+  const [category, setCategory] = useState<CategoryId>("business");
   const [selectedStyleId, setSelectedStyleId] = useState<string>("corporate");
   const [bgColor, setBgColor] = useState<BgColor>("white");
   const [customPrompt, setCustomPrompt] = useState("");
@@ -63,20 +63,20 @@ export default function UploadCard() {
 
   const getCategoryLabel = (catId: CategoryId) => {
     switch (catId) {
-      case "creator": return "크리에이터 프로필";
-      case "thumbnail": return "썸네일 캐릭터";
-      case "fun": return "컨셉 & 밈 비주얼";
-      case "custom": return "커스텀 프롬프트";
+      case "business": return t("catBusiness");
+      case "id": return t("catId");
+      case "fun": return t("catFun");
+      case "custom": return t("catCustom");
       default: return catId;
     }
   };
 
   const getCategoryDesc = (catId: CategoryId) => {
     switch (catId) {
-      case "creator": return "유튜브 채널 아트·SNS 프로필·헤드샷";
-      case "thumbnail": return "시청 지체 시간을 늘리는 3D 툰 & 표정 캐릭터";
-      case "fun": return "K-POP 화보 & 세련된 컨셉 비주얼";
-      case "custom": return "원하는 시각 씬을 직접 글 표현";
+      case "business": return t("catBusinessDesc");
+      case "id": return t("catIdDesc");
+      case "fun": return t("catFunDesc");
+      case "custom": return t("catCustomDesc");
       default: return "";
     }
   };
