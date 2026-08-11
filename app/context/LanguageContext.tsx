@@ -20,7 +20,7 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
   const [language, setLanguageState] = useState<Language>("ko");
-  const [credits, setCredits] = useState<number>(2); // Default 2 free credits for new visitors
+  const [credits, setCredits] = useState<number>(1); // Default 1 free credit for new visitors
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState<boolean>(false);
 
   useEffect(() => {
@@ -38,7 +38,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
         setCredits(parsed);
       }
     } else {
-      localStorage.setItem("proshot_credits", "2");
+      localStorage.setItem("proshot_credits", "1");
     }
   }, []);
 

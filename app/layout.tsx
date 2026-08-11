@@ -16,12 +16,13 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "ProShot — 셀카 한 장으로 증명사진부터 컨셉 화보까지",
+  title: "BlogCraft AI — 로컬 LM Studio 기반 전문 AI 블로그 자동 작성 스튜디오",
   description:
-    "스튜디오 예약 없이 5분 만에. 취업용 증명사진, 여권사진, 비즈니스 헤드샷, 아이돌 프로필, 커스텀 컨셉 화보까지 셀카 한 장으로 완성하고 인화용 시트로 바로 출력하세요.",
+    "글 한 줄로 네이버 블로그, 티스토리, 브런치, 워드프레스 맞춤형 고품질 블로그 원고 완벽 생성. 로컬 LM Studio AI(http://127.0.0.1:1234) 연동으로 개인정보 유출 없이 빠르게 포스팅을 완성하세요.",
 };
 
 import { LanguageProvider } from "./context/LanguageContext";
+import PaymentModal from "./components/PaymentModal";
 
 export default function RootLayout({
   children,
@@ -47,7 +48,10 @@ export default function RootLayout({
       <body
         className={`${notoSansKr.variable} ${outfit.variable} font-sans antialiased`}
       >
-        <LanguageProvider>{children}</LanguageProvider>
+        <LanguageProvider>
+          {children}
+          <PaymentModal />
+        </LanguageProvider>
       </body>
     </html>
   );

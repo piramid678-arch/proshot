@@ -9,6 +9,8 @@ interface PassOption {
   titleKey: string;
   descKey: string;
   priceKey: string;
+  priceValue: number;
+  usdPriceValue: number;
   popular?: boolean;
 }
 
@@ -19,6 +21,8 @@ const PASS_OPTIONS: PassOption[] = [
     titleKey: "pass1Title",
     descKey: "pass1Desc",
     priceKey: "pass1Price",
+    priceValue: 2900,
+    usdPriceValue: 2.5,
   },
   {
     id: "pass3",
@@ -26,6 +30,8 @@ const PASS_OPTIONS: PassOption[] = [
     titleKey: "pass3Title",
     descKey: "pass3Desc",
     priceKey: "pass3Price",
+    priceValue: 4900,
+    usdPriceValue: 3.9,
     popular: true,
   },
   {
@@ -34,6 +40,8 @@ const PASS_OPTIONS: PassOption[] = [
     titleKey: "pass5Title",
     descKey: "pass5Desc",
     priceKey: "pass5Price",
+    priceValue: 6900,
+    usdPriceValue: 5.5,
   },
 ];
 
@@ -56,6 +64,31 @@ export default function PaymentModal() {
     await new Promise((res) => setTimeout(res, 1000));
 
     addCredits(selectedPass.credits);
+
+    // ✅ GA4 Purchase Event Tracking upon payment approval
+    const orderId = `ORD_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const currency = paymentMethod === "paypal" ? "USD" : "KRW";
+    const numericValue = paymentMethod === "paypal" ? selectedPass.usdPriceValue : selectedPass.priceValue;
+
+    type GtagFunction = (command: string, action: string, params?: Record<string, unknown>) => void;
+    const win = typeof window !== "undefined" ? (window as unknown as { gtag?: GtagFunction }) : undefined;
+
+    if (typeof win?.gtag === "function") {
+      win.gtag("event", "purchase", {
+        transaction_id: orderId, // 주문/결제 고유 번호 (문자열)
+        value: numericValue,     // ⚠️ 필수: 따옴표 없는 숫자 형태 (Number)
+        currency: currency,      // ⚠️ 필수: 통화 코드 (USD, KRW 등)
+        items: [
+          {
+            item_id: selectedPass.id,
+            item_name: `PulseCraft Credit (${selectedPass.credits}회)`,
+            price: numericValue,
+            quantity: 1,
+          },
+        ],
+      });
+    }
+
     setIsProcessing(false);
 
     setShowSuccessToast(true);
