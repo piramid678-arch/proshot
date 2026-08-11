@@ -43,6 +43,10 @@ export default function RootLayout({
             gtag('config', 'G-S4D14P7GPH');
           `}
         </Script>
+        <Script
+          src="https://cdn.iamport.kr/v1/iamport.js"
+          strategy="lazyOnload"
+        />
       </head>
       <body
         className={`${notoSansKr.variable} ${outfit.variable} font-sans antialiased`}
