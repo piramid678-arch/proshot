@@ -72,7 +72,7 @@ const TRENDING_MOCK_ITEMS: TrendingItem[] = [
 
 export default function PixelingStudioPage() {
   const { t, credits, openPaymentModal, consumeCredit } = useLanguage();
-  const [activeTab, setActiveTab] = useState<AppTab>("auto_script");
+  const [activeTab, setActiveTab] = useState<AppTab>("photo_studio");
 
   // Script Generator Form State
   const [activePlatform, setActivePlatform] = useState<string>("youtube");
@@ -202,6 +202,19 @@ export default function PixelingStudioPage() {
           <nav className="hidden md:flex items-center gap-1.5 p-1 bg-slate-900/90 border border-slate-800 rounded-2xl">
             <button
               type="button"
+              onClick={() => setActiveTab("photo_studio")}
+              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 ${
+                activeTab === "photo_studio"
+                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
+              }`}
+            >
+              <span>🎨</span>
+              <span>ProShot AI 포토 스튜디오</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setActiveTab("auto_script")}
               className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 ${
                 activeTab === "auto_script"
@@ -210,7 +223,7 @@ export default function PixelingStudioPage() {
               }`}
             >
               <span>🚀</span>
-              <span>올인원 자동 생성</span>
+              <span>올인원 원고 생성</span>
             </button>
 
             <button
@@ -223,20 +236,7 @@ export default function PixelingStudioPage() {
               }`}
             >
               <span>📈</span>
-              <span>실시간 바이럴 트렌드 픽</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setActiveTab("photo_studio")}
-              className={`px-4 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-2 ${
-                activeTab === "photo_studio"
-                  ? "bg-gradient-to-r from-indigo-600 to-purple-600 text-white shadow-md"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/50"
-              }`}
-            >
-              <span>🎨</span>
-              <span>4대 AI 비주얼 스튜디오</span>
+              <span>바이럴 트렌드 픽</span>
             </button>
           </nav>
 
@@ -264,13 +264,22 @@ export default function PixelingStudioPage() {
         {/* Mobile Tab Switcher */}
         <div className="md:hidden flex border-t border-slate-800 bg-slate-950 p-2 gap-1 justify-around text-xs font-bold">
           <button
+            onClick={() => setActiveTab("photo_studio")}
+            className={`flex-1 py-2 rounded-xl flex flex-col items-center gap-1 ${
+              activeTab === "photo_studio" ? "bg-indigo-600 text-white" : "text-slate-400"
+            }`}
+          >
+            <span>🎨</span>
+            <span>포토 스튜디오</span>
+          </button>
+          <button
             onClick={() => setActiveTab("auto_script")}
             className={`flex-1 py-2 rounded-xl flex flex-col items-center gap-1 ${
               activeTab === "auto_script" ? "bg-indigo-600 text-white" : "text-slate-400"
             }`}
           >
             <span>🚀</span>
-            <span>자동 생성</span>
+            <span>원고 생성</span>
           </button>
           <button
             onClick={() => setActiveTab("trend_discovery")}
@@ -280,15 +289,6 @@ export default function PixelingStudioPage() {
           >
             <span>📈</span>
             <span>트렌드 픽</span>
-          </button>
-          <button
-            onClick={() => setActiveTab("photo_studio")}
-            className={`flex-1 py-2 rounded-xl flex flex-col items-center gap-1 ${
-              activeTab === "photo_studio" ? "bg-indigo-600 text-white" : "text-slate-400"
-            }`}
-          >
-            <span>🎨</span>
-            <span>비주얼 4종</span>
           </button>
         </div>
       </header>

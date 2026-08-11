@@ -16,9 +16,9 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "BlogCraft AI — 로컬 LM Studio 기반 전문 AI 블로그 자동 작성 스튜디오",
+  title: "ProShot AI — 셀카 한 장으로 만드는 증명사진 & AI 프로필 스튜디오",
   description:
-    "글 한 줄로 네이버 블로그, 티스토리, 브런치, 워드프레스 맞춤형 고품질 블로그 원고 완벽 생성. 로컬 LM Studio AI(http://127.0.0.1:1234) 연동으로 개인정보 유출 없이 빠르게 포스팅을 완성하세요.",
+    "취업용 증명사진, 여권사진, 비즈니스 헤드샷, K-POP 프로필, 화보까지 스튜디오 예약 없이 5분 만에 완벽 생성. 4K 인화 시트 자동 제공.",
 };
 
 import { LanguageProvider } from "./context/LanguageContext";
